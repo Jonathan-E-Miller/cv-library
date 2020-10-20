@@ -1,0 +1,6 @@
+.vs/
+*.sln
+
+
+CvWebApi/bin
+CvWebApi/obj
