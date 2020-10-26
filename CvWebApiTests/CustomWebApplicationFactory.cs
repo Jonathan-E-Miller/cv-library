@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Serialization;
+using System.Linq;
 
 namespace CvWebApiTests
 {
@@ -18,6 +20,12 @@ namespace CvWebApiTests
         // Create a new service provider.
         var serviceProvider = new ServiceCollection().AddEntityFrameworkInMemoryDatabase().BuildServiceProvider();
 
+        // Remove the old database...
+        var descriptor = services.SingleOrDefault(
+               d => d.ServiceType ==
+                   typeof(DbContextOptions<ApplicationDbContext>));
+
+        services.Remove(descriptor);
         // Add a database context (AppDbContext) using an in-memory database for testing.
         services.AddDbContext<ApplicationDbContext>(options =>
         {
