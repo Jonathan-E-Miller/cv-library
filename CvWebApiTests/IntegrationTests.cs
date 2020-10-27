@@ -1,12 +1,14 @@
 ﻿using Castle.Core.Internal;
 using CvWebApi;
 using CvWebApi.Utils;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Diagnostics;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -115,6 +117,58 @@ namespace CvWebApiTests
         bool authCookieFound = cookies.SingleOrDefault(s => s.Contains(".AspNetCore.Identity.Application")) != null;
         Assert.IsTrue(authCookieFound);
       }
+    }
+
+    [TestCase]
+    public async Task TestLogout()
+    {
+      // Arrange
+      ApiUser userObj = new ApiUser()
+      {
+        Email = "test@test.com",
+        Password = "Testing123!",
+        Username = "test123",
+      };
+      var json = JsonConvert.SerializeObject(userObj);
+      StringContent strContent = new StringContent(json, UnicodeEncoding.UTF8, "application/json");
+      var httpResponse = await _client.PostAsync("auth/register", strContent);
+      
+      // The endpoint or route of the controller action.
+      httpResponse = await _client.PostAsync("auth/login", strContent);
+
+      // ensure that we are logged in correctly.
+      var result = httpResponse.Content;
+      string content = result.ReadAsStringAsync().Result;
+
+      CvApiResponse response = JsonConvert.DeserializeObject<CvApiResponse>(content);
+      Assert.AreEqual(true, response.Success);
+      IEnumerable<string> cookies = httpResponse.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
+      bool authCookieFound = cookies.SingleOrDefault(s => s.Contains(".AspNetCore.Identity.Application")) != null;
+      Assert.IsTrue(authCookieFound);
+
+      // Act
+      httpResponse = await _client.PostAsync("auth/logout", strContent);
+
+      // Assert
+      cookies = httpResponse.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
+
+      if (cookies == null)
+      {
+        authCookieFound = false;
+      }
+      else
+      {
+        authCookieFound = cookies.SingleOrDefault(s => s.Contains(".AspNetCore.Identity.Application")) != null;
+      }
+
+      Assert.IsFalse(authCookieFound);
+    }
+
+    [TestCase]
+    public async Task TestLogoutBeforeLogin()
+    {
+      var response = await _client.PostAsync("auth/logout", null);
+      Assert.AreEqual(response.StatusCode, HttpStatusCode.Unauthorized);
     }
   }
 }
