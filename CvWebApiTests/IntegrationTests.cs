@@ -57,7 +57,8 @@ namespace CvWebApiTests
       {
         Email = email,
         Password = pass,
-        Username = user
+        Username = user,
+        RememberMe = rememberMe
       };
 
       var json = JsonConvert.SerializeObject(userObj);
@@ -74,6 +75,46 @@ namespace CvWebApiTests
       CvApiResponse response =JsonConvert.DeserializeObject<CvApiResponse>(content);
       // make sure that the content was returned.
       Assert.AreEqual(shouldPass, response.Success);
+    }
+
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task TestLogin(bool correctPassword)
+    {
+      // Register a new user.
+      ApiUser userObj = new ApiUser()
+      {
+        Email = "test@test.com",
+        Password = "Testing123!",
+        Username = "test123",
+      };
+      var json = JsonConvert.SerializeObject(userObj);
+      StringContent strContent = new StringContent(json, UnicodeEncoding.UTF8, "application/json");
+      var httpResponse = await _client.PostAsync("auth/register", strContent);
+
+
+      // get the password to use
+      string password = correctPassword ? "Testing123!" : "WrongPassword";
+      userObj.Password = password;
+      // serialise the new object
+      json = JsonConvert.SerializeObject(userObj);
+      strContent = new StringContent(json, UnicodeEncoding.UTF8, "application/json");
+      
+      // The endpoint or route of the controller action.
+      httpResponse = await _client.PostAsync("auth/login", strContent);
+      var result = httpResponse.Content;
+      string content = result.ReadAsStringAsync().Result;
+      
+      // deserialise the result
+      CvApiResponse response = JsonConvert.DeserializeObject<CvApiResponse>(content);
+      Assert.AreEqual(correctPassword, response.Success);
+
+      if (correctPassword)
+      {
+        IEnumerable<string> cookies = httpResponse.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
+        bool authCookieFound = cookies.SingleOrDefault(s => s.Contains(".AspNetCore.Identity.Application")) != null;
+        Assert.IsTrue(authCookieFound);
+      }
     }
   }
 }

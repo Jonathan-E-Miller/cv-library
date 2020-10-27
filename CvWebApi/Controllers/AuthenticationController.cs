@@ -53,5 +53,29 @@ namespace CvWebApi.Controllers
 
       return Ok(response);
     }
+
+    [AllowAnonymous]
+    [HttpPost("login")]
+    public async Task<ActionResult> LogIn(ApiUser user)
+    {
+      CvApiResponse response = new CvApiResponse();
+      IdentityUser identityUser = await _userManager.FindByEmailAsync(user.Email);
+
+      if (identityUser != null)
+      {
+        Microsoft.AspNetCore.Identity.SignInResult result = await _signInManager.PasswordSignInAsync(identityUser, user.Password, user.RememberMe, false);
+
+        if (result.Succeeded)
+        {
+          response.Success = true;
+        }
+        else
+        {
+          response.Success = false;
+          response.Message = "Invalid Password";
+        }
+      }
+      return Ok(response);
+    }
   }
 }
