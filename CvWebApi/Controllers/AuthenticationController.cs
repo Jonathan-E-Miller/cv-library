@@ -77,5 +77,15 @@ namespace CvWebApi.Controllers
       }
       return Ok(response);
     }
+
+    [Authorize]
+    [HttpPost("logout")]
+    public async Task<ActionResult> Logout()
+    {
+      CvApiResponse response = new CvApiResponse();
+      await _signInManager.SignOutAsync();
+      response.Success = true;
+      return Ok(response);
+    }
   }
 }

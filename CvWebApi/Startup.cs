@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CvWebApi.Database;
 using CvWebApi.Models;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -32,6 +33,29 @@ namespace CvWebApi
       services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("SqlConnection")));
       services.AddIdentity<IdentityUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = false).AddEntityFrameworkStores<ApplicationDbContext>();
       services.AddControllers();
+      
+      // Work around to prevent default action of redirecting to login when user is not authorized. 
+      // As this in an API -  we do not have a login page and this causes status code 404 when it
+      // should return status code 401.
+      services.ConfigureApplicationCookie(o =>
+      {
+        o.Events = new CookieAuthenticationEvents()
+        {
+          OnRedirectToLogin = (ctx) =>
+          {
+            ctx.Response.StatusCode = 401;
+
+            return Task.CompletedTask;
+          },
+          OnRedirectToAccessDenied = (ctx) =>
+          {
+
+            ctx.Response.StatusCode = 403;
+
+            return Task.CompletedTask;
+          }
+        };
+      });
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
