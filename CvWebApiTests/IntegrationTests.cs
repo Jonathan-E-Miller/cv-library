@@ -1,10 +1,12 @@
 ﻿using Castle.Core.Internal;
 using CvWebApi;
 using CvWebApi.Utils;
+using Microsoft.AspNetCore.Mvc.Diagnostics;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,14 +19,14 @@ namespace CvWebApiTests
     private CustomWebApplicationFactory<Startup> _factory;
     private HttpClient _client;
 
-    [OneTimeSetUp]
+    [SetUp]
     public void CreateClientFromFactory()
     {
       _factory = new CustomWebApplicationFactory<Startup>();
       _client = _factory.CreateClient();
     }
 
-    [OneTimeTearDown]
+    [TearDown]
     public void TearDown()
     {
       _client.Dispose();
@@ -46,9 +48,10 @@ namespace CvWebApiTests
       Assert.IsFalse(content.IsNullOrEmpty());
     }
 
-    [TestCase("test@test.com", "pass12345", "user123", true)]
-    [TestCase("test@test.com", "pass12345", "", false)]
-    public async Task TestRegister(string email, string pass, string user, bool shouldPass)
+    [TestCase("test0@test.com", "pass12345", "User123", true, false)]       // bad password
+    [TestCase("test1@test.com", "Pass12345!", "", true, false)]             // missing username
+    [TestCase("test2@test.com", "Pass12345!", "User123", true, true)]      // should pass
+    public async Task TestRegister(string email, string pass, string user, bool rememberMe, bool shouldPass)
     {
       ApiUser userObj = new ApiUser()
       {

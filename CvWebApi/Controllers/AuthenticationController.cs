@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace CvWebApi.Controllers
 {
@@ -11,13 +12,13 @@ namespace CvWebApi.Controllers
   [Route("auth")]
   public class AuthenticationController : ControllerBase
   {
-    private readonly ApplicationDbContext _dbContext;
     private readonly UserManager<IdentityUser> _userManager;
+    private readonly SignInManager<IdentityUser> _signInManager;
 
-    public AuthenticationController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
+    public AuthenticationController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager)
     {
-      _dbContext = context;
       _userManager = userManager;
+      _signInManager = signInManager;
     }
 
 
@@ -36,9 +37,9 @@ namespace CvWebApi.Controllers
       };
 
       // ensure unique
-      if (_dbContext.Users.Where(u => u.Email == newUser.Email).ToList().Count == 0)
+      if (_userManager.Users.Where(u => u.Email == newUser.Email).ToList().Count == 0)
       {
-        IdentityResult result = _userManager.CreateAsync(identityUser).Result;
+        IdentityResult result = _userManager.CreateAsync(identityUser, newUser.Password).Result;
         response.Success = result.Succeeded;
         if (!result.Succeeded)
         {
