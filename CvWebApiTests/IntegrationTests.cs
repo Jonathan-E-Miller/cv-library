@@ -39,13 +39,37 @@ namespace CvWebApiTests
     [TestCase("/weatherforecast")]
     public async Task TestEndPointReturnsContent(string endpoint)
     {
-      // The endpoint or route of the controller action.
-      var httpResponse = await _client.GetAsync(endpoint);
+      // Arrange
+      ApiUser userObj = new ApiUser()
+      {
+        Email = "test@test.com",
+        Password = "Testing123!",
+        Username = "test123",
+      };
+      var json = JsonConvert.SerializeObject(userObj);
+      StringContent strContent = new StringContent(json, UnicodeEncoding.UTF8, "application/json");
+      var httpResponse = await _client.PostAsync("auth/register", strContent);
 
+      // The endpoint or route of the controller action.
+      httpResponse = await _client.PostAsync("auth/login", strContent);
+
+      // ensure that we are logged in correctly.
       var result = httpResponse.Content;
 
       string content = result.ReadAsStringAsync().Result;
 
+      CvApiResponse response = JsonConvert.DeserializeObject<CvApiResponse>(content);
+      Assert.AreEqual(true, response.Success);
+      IEnumerable<string> cookies = httpResponse.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
+      bool authCookieFound = cookies.SingleOrDefault(s => s.Contains(".AspNetCore.Identity.Application")) != null;
+      Assert.IsTrue(authCookieFound);
+
+      // The endpoint or route of the controller action.
+      httpResponse = await _client.GetAsync(endpoint);
+
+      result = httpResponse.Content;
+
+      content = result.ReadAsStringAsync().Result;
       // make sure that the content was returned.
       Assert.IsFalse(content.IsNullOrEmpty());
     }
@@ -151,17 +175,33 @@ namespace CvWebApiTests
 
       // Assert
       cookies = httpResponse.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
+      string cookie = cookies.SingleOrDefault(s => s.Contains(".AspNetCore.Identity.Application"));
 
-      if (cookies == null)
+      if (cookie != null)
       {
-        authCookieFound = false;
-      }
-      else
-      {
-        authCookieFound = cookies.SingleOrDefault(s => s.Contains(".AspNetCore.Identity.Application")) != null;
-      }
+        string[] components = cookie.Split(";");
 
-      Assert.IsFalse(authCookieFound);
+        foreach (string component in components)
+        {
+          string[] values = component.Split("=");
+          
+          switch (values[0])
+          {
+            case ".AspNetCore.Identity.Application":
+              {
+                Assert.IsEmpty(values[1]);
+              }
+              break;
+            case "expires":
+              {
+                Assert.AreEqual(values[1], "Thu, 01 Jan 1970 00:00:00 GMT");
+              }
+              break;
+            default:
+              break;
+          }
+        }
+      }
     }
 
     [TestCase]
