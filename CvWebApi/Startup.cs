@@ -20,6 +20,9 @@ namespace CvWebApi
 {
   public class Startup
   {
+
+    readonly string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+
     public Startup(IConfiguration configuration)
     {
       Configuration = configuration;
@@ -33,7 +36,17 @@ namespace CvWebApi
       services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("SqlConnection")));
       services.AddIdentity<IdentityUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = false).AddEntityFrameworkStores<ApplicationDbContext>();
       services.AddControllers();
-      
+
+      services.AddCors(options =>
+      {
+        options.AddPolicy(name: MyAllowSpecificOrigins,
+                          builder =>
+                          {
+                            builder.WithOrigins("http://localhost:4200");
+                          });
+      });
+
+
       // Work around to prevent default action of redirecting to login when user is not authorized. 
       // As this in an API -  we do not have a login page and this causes status code 404 when it
       // should return status code 401.
@@ -69,6 +82,7 @@ namespace CvWebApi
       app.UseHttpsRedirection();
 
       app.UseRouting();
+      app.UseCors(MyAllowSpecificOrigins);
 
       app.UseAuthentication();
       app.UseAuthorization();
