@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient.DataClassification;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -12,7 +13,6 @@ namespace CvWebApi.Models
   {
     public int SchoolId { get; set; }
     
-    [Index(IsUnique = true)]
     [StringLength(50)]
     public string Name { get; set; }
   }
