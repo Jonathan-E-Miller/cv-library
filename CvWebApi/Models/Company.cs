@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -11,7 +12,6 @@ namespace CvWebApi.Models
   {
     public int CompanyId { get; set; }
     
-    [Index(IsUnique = true)]
     [StringLength(50)]
     public string CompanyName { get; set; }
     public Sector Sector { get; set; }
