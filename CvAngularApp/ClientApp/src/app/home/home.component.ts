@@ -5,4 +5,11 @@ import { Component } from '@angular/core';
   templateUrl: './home.component.html',
 })
 export class HomeComponent {
+  cookieValue: string;
+    text: string;
+  constructor() { }
+
+  ngOnInit(): void {
+    this.text = "Hello World";
+  }
 }
